@@ -1,58 +1,111 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# SIPUS-Del — Sistem Informasi Perpustakaan
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+SIPUS-Del adalah aplikasi berbasis web yang dibuat menggunakan Laravel untuk membantu pengelolaan data buku dan kategori buku perpustakaan.
 
-## About Laravel
+## Fitur
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Menampilkan daftar buku dengan pagination.
+- Menambah, melihat detail, mengubah, dan menghapus data buku.
+- Mengelola kategori buku.
+- Menghubungkan buku dengan kategori menggunakan relasi database.
+- Memvalidasi ISBN agar tidak duplikat.
+- Memvalidasi judul minimal 5 karakter.
+- Memastikan stok buku tidak bernilai negatif.
+- Menampilkan notifikasi setelah operasi berhasil.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Teknologi
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- Laravel
+- PHP
+- SQLite
+- Blade Template
+- Bootstrap 5.3.3
 
-## Learning Laravel
+## Struktur Data
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Tabel `kategoris`
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Menyimpan data kategori buku, termasuk kode dan nama kategori.
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+### Tabel `bukus`
 
-## Agentic Development
+Menyimpan data buku, termasuk ISBN, judul, penulis, penerbit, tahun terbit, kategori, stok, dan sinopsis.
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+Relasi yang digunakan adalah one-to-many: satu kategori dapat memiliki banyak buku.
 
-```bash
-composer require laravel/boost --dev
+## Persyaratan
 
-php artisan boost:install
-```
+Pastikan perangkat sudah memiliki:
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+- PHP sesuai kebutuhan versi Laravel proyek.
+- Composer.
+- Git.
 
-## Contributing
+## Cara Instalasi
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+1. Clone repository:
 
-## Code of Conduct
+   ```bash
+   git clone https://github.com/DoydengganSimanjuntak/ppw-2026-week5-12S24033.git
+   ```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+2. Masuk ke folder proyek:
 
-## Security Vulnerabilities
+   ```bash
+   cd ppw-2026-week5-12S24033
+   ```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+3. Instal dependensi:
 
-## License
+   ```bash
+   composer install
+   ```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+4. Buat file konfigurasi lingkungan:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   Jika menggunakan Windows Command Prompt, bisa gunakan:
+
+   ```cmd
+   copy .env.example .env
+   ```
+
+5. Buat application key:
+
+   ```bash
+   php artisan key:generate
+   ```
+
+6. Siapkan database SQLite dengan membuat file `database/database.sqlite`, jika belum tersedia.
+
+7. Pastikan konfigurasi `.env` menggunakan SQLite:
+
+   ```env
+   DB_CONNECTION=sqlite
+   ```
+
+8. Jalankan migrasi dan seeder:
+
+   ```bash
+   php artisan migrate --seed
+   ```
+
+9. Jalankan aplikasi:
+
+   ```bash
+   php artisan serve
+   ```
+
+10. Buka aplikasi melalui:
+
+    http://127.0.0.1:8000/buku
+
+## Pengembang
+
+**Nama:** Doy Denggan Simanjuntak  
+**Program Studi:** Sistem Informasi  
+**Institusi:** Institut Teknologi Del  
+**Mata Kuliah:** Pemrograman dan Pengujian Aplikasi Web
