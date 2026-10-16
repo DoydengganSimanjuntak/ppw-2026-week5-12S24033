@@ -55,19 +55,42 @@
     <header>
         <div class="container">
             <nav class="navbar navbar-expand-lg">
-                <a class="navbar-brand fw-bold" href="{{ route('buku.index') }}">
-                    SIPUS-Del
-                </a>
-
-                <div class="navbar-nav ms-auto">
-                    <a class="nav-link" href="{{ route('buku.index') }}">
-                        Daftar Buku
+                @auth
+                    <a class="navbar-brand fw-bold" href="{{ route('buku.index') }}">
+                        SIPUS-Del
                     </a>
 
-                    <a class="nav-link" href="{{ route('kategori.index') }}">
-                        Kategori
+                    <div class="navbar-nav ms-auto align-items-lg-center">
+                        <a class="nav-link" href="{{ route('buku.index') }}">
+                            Daftar Buku
+                        </a>
+
+                        <a class="nav-link" href="{{ route('kategori.index') }}">
+                            Kategori
+                        </a>
+
+                        <a class="nav-link" href="{{ route('peminjaman.index') }}">
+                            Peminjaman
+                        </a>
+
+                        <form action="{{ route('logout') }}" method="POST" class="ms-lg-3 mt-2 mt-lg-0">
+                            @csrf
+                            <button type="submit" class="btn btn-light btn-sm">
+                                Logout
+                            </button>
+                        </form>
+                    </div>
+                @else
+                    <a class="navbar-brand fw-bold" href="{{ route('login') }}">
+                        SIPUS-Del
                     </a>
-                </div>
+
+                    <div class="ms-auto">
+                        <a href="{{ route('login') }}" class="btn btn-light btn-sm">
+                            Login Pustakawan
+                        </a>
+                    </div>
+                @endauth
             </nav>
         </div>
     </header>
