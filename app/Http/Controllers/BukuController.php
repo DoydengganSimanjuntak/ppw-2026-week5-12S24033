@@ -6,14 +6,68 @@ use App\Models\Buku;
 use App\Models\Kategori;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 class BukuController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $bukus = Buku::with('kategori')->latest()->paginate(10);
+        $search = $request->query(
+            'search',
+            $request->session()->get('pencarian_terakhir', '')
+        );
 
-        return view('buku.index', compact('bukus'));
+        $kategoriId = $request->query('kategori_id');
+
+        // Simpan kata kunci pencarian terakhir ke session.
+        if ($request->has('search')) {
+            $search = trim((string) $request->query('search'));
+            $request->session()->put('pencarian_terakhir', $search);
+        }
+
+        // Statistik perpustakaan menggunakan Query Builder.
+        $totalJudul = DB::table('bukus')->count();
+
+        $totalStok = DB::table('bukus')->sum('stok');
+
+        $totalDipinjam = DB::table('peminjamans')
+            ->where('status', 'dipinjam')
+            ->count();
+
+        $totalDikembalikan = DB::table('peminjamans')
+            ->where('status', 'dikembalikan')
+            ->count();
+
+        // Katalog dengan eager loading, jumlah riwayat pinjam,
+        // pencarian dinamis, filter kategori, dan pagination.
+        $bukus = Buku::with('kategori')
+            ->withCount('peminjamans')
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('judul', 'like', "%{$search}%")
+                        ->orWhere('penulis', 'like', "%{$search}%")
+                        ->orWhere('isbn', 'like', "%{$search}%");
+                });
+            })
+            ->when($kategoriId, function ($query, $kategoriId) {
+                $query->where('kategori_id', $kategoriId);
+            })
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        $kategoris = Kategori::orderBy('nama_kategori')->get();
+
+        return view('buku.index', compact(
+            'bukus',
+            'kategoris',
+            'search',
+            'kategoriId',
+            'totalJudul',
+            'totalStok',
+            'totalDipinjam',
+            'totalDikembalikan'
+        ));
     }
 
     public function create()
@@ -31,7 +85,12 @@ class BukuController extends Controller
             'judul' => ['required', 'string', 'min:5', 'max:255'],
             'penulis' => ['required', 'string', 'max:255'],
             'penerbit' => ['nullable', 'string', 'max:255'],
-            'tahun_terbit' => ['nullable', 'integer', 'min:1900', 'max:' . date('Y')],
+            'tahun_terbit' => [
+                'nullable',
+                'integer',
+                'min:1900',
+                'max:' . date('Y'),
+            ],
             'stok' => ['required', 'integer', 'min:0'],
             'sinopsis' => ['nullable', 'string'],
         ]);
@@ -69,7 +128,12 @@ class BukuController extends Controller
             'judul' => ['required', 'string', 'min:5', 'max:255'],
             'penulis' => ['required', 'string', 'max:255'],
             'penerbit' => ['nullable', 'string', 'max:255'],
-            'tahun_terbit' => ['nullable', 'integer', 'min:1900', 'max:' . date('Y')],
+            'tahun_terbit' => [
+                'nullable',
+                'integer',
+                'min:1900',
+                'max:' . date('Y'),
+            ],
             'stok' => ['required', 'integer', 'min:0'],
             'sinopsis' => ['nullable', 'string'],
         ]);
