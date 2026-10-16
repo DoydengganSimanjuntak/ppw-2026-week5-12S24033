@@ -151,20 +151,35 @@ Gunakan akun ini hanya untuk lingkungan praktikum lokal. Jangan gunakan password
 
 ## Bukti Pengujian
 
-Tambahkan screenshot hasil pengujian ke folder `docs/screenshots/`, kemudian cantumkan di bagian ini.
+Berikut merupakan dokumentasi hasil pengujian aplikasi SIPUS-Del. Screenshot disimpan di folder `docs/screenshots/`.
 
-Screenshot yang disarankan:
-- `login.png` — halaman login pustakawan.
-- `peminjaman-berhasil.png` — peminjaman berhasil.
-- `stok-habis.png` — penolakan ketika stok buku habis.
-- `pengembalian.png` — transaksi pengembalian berhasil.
-- `cookie-httponly.png` — atribut HttpOnly pada cookie.
+### 1. Login Pustakawan
 
-Nama dan lokasi screenshot harus sesuai dengan file yang benar-benar kamu simpan.
+![Login Pustakawan](docs/screenshots/login.png)
+
+### 2. Peminjaman Berhasil
+
+![Peminjaman Berhasil](docs/screenshots/peminjaman-berhasil.png)
+
+### 3. Penolakan Peminjaman Saat Stok Habis
+
+![Penolakan Peminjaman Saat Stok Habis](docs/screenshots/stok-habis.png)
+
+### 4. Pengembalian Buku
+
+![Pengembalian Buku](docs/screenshots/pengembalian.png)
+
+### 5. Pemeriksaan Cookie HttpOnly
+
+![Pemeriksaan Cookie HttpOnly](docs/screenshots/cookie-httponly.png)
 
 ## Pengembang
 
-**Nama:** Doy Denggan Simanjuntak  
-**Program Studi:** Sistem Informasi  
-**Institusi:** Institut Teknologi Del  
-**Mata Kuliah:** Pemrograman dan Pengujian Aplikasi Web
+- **Nama:** Doy Denggan Simanjuntak
+- **Program Studi:** Sistem Informasi
+- **Institusi:** Institut Teknologi Del
+- **Mata Kuliah:** Pemrograman dan Pengujian Aplikasi Web
+
+## Repository
+
+[GitHub — SIPUS-Del Week 6](https://github.com/DoydengganSimanjuntak/ppw-2026-week5-12S24033/tree/week6-db-session)
