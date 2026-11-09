@@ -1,0 +1,401 @@
+
+openapi: 3.0.3
+
+info:
+  title: SIPUS-Del REST API
+  description: Dokumentasi REST API Sistem Informasi Perpustakaan IT Del.
+  version: 1.0.0
+
+servers:
+  - url: http://127.0.0.1:8000
+    description: Local development server
+
+tags:
+  - name: Authentication
+    description: Autentikasi pengguna menggunakan Sanctum
+  - name: Books
+    description: API katalog buku
+  - name: Loans
+    description: API peminjaman dan pengembalian buku
+  - name: OpenLibrary
+    description: Integrasi dengan OpenLibrary API
+
+paths:
+  /api/v1/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login pengguna
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: pustakawan@del.ac.id
+                password:
+                  type: string
+                  example: password123
+      responses:
+        '200':
+          description: Login berhasil dan Bearer Token diberikan
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  token:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /api/v1/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout pengguna
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logout berhasil
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/user:
+    get:
+      tags:
+        - Authentication
+      summary: Mendapatkan informasi pengguna yang sedang login
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Informasi pengguna berhasil diperoleh
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/bukus:
+    get:
+      tags:
+        - Books
+      summary: Mendapatkan daftar buku
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Pencarian berdasarkan judul atau penulis
+        - name: kategori_id
+          in: query
+          schema:
+            type: integer
+          description: Filter berdasarkan kategori
+        - name: sort_by
+          in: query
+          schema:
+            type: string
+            enum:
+              - judul
+              - penulis
+              - tahun_terbit
+              - stok
+              - created_at
+            default: judul
+        - name: sort_direction
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Nomor halaman
+      responses:
+        '200':
+          description: Daftar buku berhasil diperoleh
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookCollection'
+
+  /api/v1/bukus/{id}:
+    get:
+      tags:
+        - Books
+      summary: Mendapatkan detail buku
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Detail buku berhasil diperoleh
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/peminjamans:
+    post:
+      tags:
+        - Loans
+      summary: Membuat peminjaman buku
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - buku_id
+                - nim_peminjam
+                - nama_peminjam
+                - tanggal_pinjam
+                - tanggal_jatuh_tempo
+              properties:
+                buku_id:
+                  type: integer
+                  example: 8
+                nim_peminjam:
+                  type: string
+                  example: 12S24033
+                nama_peminjam:
+                  type: string
+                  example: Doy Denggan Simanjuntak
+                tanggal_pinjam:
+                  type: string
+                  format: date
+                  example: '2026-11-09'
+                tanggal_jatuh_tempo:
+                  type: string
+                  format: date
+                  example: '2026-11-16'
+      responses:
+        '201':
+          description: Peminjaman berhasil dibuat
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /api/v1/peminjamans/{id}/pengembalian:
+    post:
+      tags:
+        - Loans
+      summary: Mengembalikan buku
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Buku berhasil dikembalikan
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Buku sudah dikembalikan sebelumnya
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+  /api/v1/openlibrary/{isbn}:
+    get:
+      tags:
+        - OpenLibrary
+      summary: Mencari informasi buku berdasarkan ISBN melalui OpenLibrary
+      parameters:
+        - name: isbn
+          in: path
+          required: true
+          schema:
+            type: string
+          example: '9780132350884'
+      responses:
+        '200':
+          description: Data buku berhasil ditemukan
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Sanctum Token
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Pustakawan SIPUS-Del
+        email:
+          type: string
+          example: pustakawan@del.ac.id
+
+    Book:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 8
+        isbn:
+          type: string
+          nullable: true
+        judul:
+          type: string
+          example: Algoritma dan Pemrograman
+        penulis:
+          type: string
+        penerbit:
+          type: string
+        tahun_terbit:
+          type: integer
+        stok:
+          type: integer
+        sinopsis:
+          type: string
+          nullable: true
+        kategori:
+          type: object
+          properties:
+            id:
+              type: integer
+            nama_kategori:
+              type: string
+            kode_kategori:
+              type: string
+        _links:
+          type: object
+          properties:
+            self:
+              type: string
+              format: uri
+            collection:
+              type: string
+              format: uri
+
+    BookCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Book'
+        links:
+          type: object
+          properties:
+            first:
+              type: string
+              nullable: true
+            last:
+              type: string
+              nullable: true
+            prev:
+              type: string
+              nullable: true
+            next:
+              type: string
+              nullable: true
+        meta:
+          type: object
+          properties:
+            current_page:
+              type: integer
+            from:
+              type: integer
+              nullable: true
+            last_page:
+              type: integer
+            per_page:
+              type: integer
+            to:
+              type: integer
+              nullable: true
+            total:
+              type: integer
+
+    Problem:
+      type: object
+      description: Format error berdasarkan RFC 7807
+      properties:
+        type:
+          type: string
+          example: about:blank
+        title:
+          type: string
+          example: Unprocessable Content
+        status:
+          type: integer
+          example: 422
+        detail:
+          type: string
+          example: Data yang diberikan tidak valid.
+
+  responses:
+    Unauthorized:
+      description: Tidak terautentikasi
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    NotFound:
+      description: Data tidak ditemukan
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    ValidationError:
+      description: Data tidak valid
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'

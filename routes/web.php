@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\KategoriController;
 use App\Http\Controllers\BukuController;
 use App\Http\Controllers\PeminjamanController;
+use App\Http\Controllers\SoapController;
 
 // Halaman awal
 Route::get('/', function () {
@@ -45,3 +46,7 @@ Route::middleware('auth')->group(function () {
         'kembali'
     ])->name('peminjaman.kembali');
 });
+
+// SOAP Web Service
+Route::get('/soap/sipus.wsdl', [SoapController::class, 'wsdl']);
+Route::post('/soap/sipus', [SoapController::class, 'handle']);

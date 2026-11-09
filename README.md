@@ -44,6 +44,8 @@ SIPUS-Del adalah aplikasi berbasis web menggunakan Laravel untuk mengelola kolek
 - SQLite
 - Blade Template
 - Bootstrap 5.3.3
+- Laravel Sanctum
+- OpenLibrary API
 
 ## Struktur Database
 
@@ -183,3 +185,150 @@ Berikut merupakan dokumentasi hasil pengujian aplikasi SIPUS-Del. Screenshot dis
 ## Repository
 
 [GitHub — SIPUS-Del Week 6](https://github.com/DoydengganSimanjuntak/ppw-2026-week5-12S24033/tree/week6-db-session)
+
+---
+
+# Week 9 — Web Services dan REST API
+
+## 1. Analisis Kelayakan Web Service
+
+Pengembangan Web Service pada SIPUS-Del dinilai layak karena sistem perpustakaan berpotensi diintegrasikan dengan aplikasi lain, seperti aplikasi mobile dan mesin kiosk perpustakaan.
+
+Dengan adanya Web Service, aplikasi lain dapat mengakses layanan katalog dan sirkulasi melalui endpoint yang disediakan oleh backend SIPUS-Del tanpa harus mengakses database secara langsung.
+
+Penerapan Web Service memberikan beberapa manfaat:
+- Mempermudah integrasi dengan aplikasi lain.
+- Memungkinkan layanan diakses melalui berbagai perangkat.
+- Memisahkan backend dengan aplikasi yang menggunakan layanan.
+- Mempermudah pengembangan sistem di masa mendatang.
+
+## 2. Web Service Provider dan Consumer
+
+Dalam implementasi ini, SIPUS-Del memiliki dua peran.
+
+**Sebagai Web Service Provider**
+
+SIPUS-Del bertindak sebagai Provider karena menyediakan REST API untuk katalog buku, autentikasi, peminjaman, dan pengembalian buku. SIPUS-Del juga menyediakan layanan SOAP untuk pemeriksaan status peminjaman.
+
+**Sebagai Web Service Consumer**
+
+SIPUS-Del bertindak sebagai Consumer ketika menggunakan OpenLibrary API untuk memperoleh informasi buku berdasarkan ISBN.
+
+Aplikasi mobile atau kiosk juga dapat menjadi Consumer apabila menggunakan endpoint yang disediakan SIPUS-Del.
+
+## 3. Pemilihan REST dan SOAP
+
+**REST API**
+
+REST API digunakan untuk layanan katalog buku, autentikasi, peminjaman, dan pengembalian. Komunikasi menggunakan HTTP dengan format JSON.
+
+REST dipilih karena relatif sederhana, ringan, dan mudah diintegrasikan dengan aplikasi web maupun mobile.
+
+**SOAP**
+
+SOAP digunakan untuk operasi `CheckClearanceStatus`, yaitu pemeriksaan jumlah peminjaman yang masih aktif berdasarkan NIM peminjam.
+
+SOAP menggunakan pesan XML sehingga struktur permintaan dan respons dapat ditentukan secara jelas.
+
+## 4. Implementasi REST API
+
+REST API SIPUS-Del menggunakan prefix `/api/v1` untuk membedakan versi layanan.
+
+| Method | Endpoint | Keterangan |
+|---|---|---|
+| POST | `/api/v1/login` | Login dan memperoleh Bearer Token |
+| POST | `/api/v1/logout` | Logout dan menghapus token aktif |
+| GET | `/api/user` | Mendapatkan informasi pengguna terautentikasi |
+| GET | `/api/v1/bukus` | Menampilkan daftar buku |
+| GET | `/api/v1/bukus/{id}` | Menampilkan detail buku |
+| POST | `/api/v1/peminjamans` | Membuat transaksi peminjaman |
+| POST | `/api/v1/peminjamans/{id}/pengembalian` | Mengembalikan buku |
+| GET | `/api/v1/openlibrary/{isbn}` | Mengambil informasi buku dari OpenLibrary |
+
+### Fitur REST API Katalog
+
+Endpoint katalog mendukung:
+- Pencarian berdasarkan judul dan penulis.
+- Filter berdasarkan `kategori_id`.
+- Pengurutan berdasarkan judul, penulis, tahun terbit, stok, dan waktu pembuatan.
+- Pengurutan naik (`asc`) dan turun (`desc`).
+- Pagination dengan jumlah data per halaman maksimal 50.
+- Detail buku beserta informasi kategori.
+
+Respons katalog menggunakan `BukuResource` dan menyediakan tautan `_links` untuk detail buku dan koleksi.
+
+### Peminjaman dan Pengembalian melalui API
+
+Pembuatan peminjaman menggunakan validasi data dan transaksi database. Jika stok tersedia, sistem mengurangi stok buku dan membuat transaksi peminjaman.
+
+Jika stok tidak tersedia, sistem mengembalikan kesalahan HTTP 422.
+
+Pengembalian buku mengubah status peminjaman menjadi `dikembalikan`, mengisi tanggal pengembalian, dan menambahkan kembali stok buku.
+
+Jika transaksi sudah dikembalikan sebelumnya, sistem memberikan respons HTTP 409 Conflict.
+
+## 5. Autentikasi Menggunakan Laravel Sanctum
+
+REST API SIPUS-Del menggunakan Laravel Sanctum untuk autentikasi berbasis Bearer Token.
+
+Alur autentikasi:
+1. Pengguna mengirim email dan password ke endpoint login.
+2. Sistem memeriksa data pengguna.
+3. Jika berhasil, sistem membuat token menggunakan Sanctum.
+4. Token digunakan pada header Authorization untuk mengakses endpoint yang dilindungi.
+5. Pengguna dapat melakukan logout untuk menghapus token aktif.
+
+Format header:
+
+```http
+Authorization: Bearer {token}
+```
+
+Endpoint peminjaman dan pengembalian dilindungi menggunakan middleware `auth:sanctum`.
+
+## 6. Integrasi OpenLibrary API
+
+SIPUS-Del menggunakan OpenLibrary sebagai layanan eksternal untuk mencari informasi buku berdasarkan ISBN.
+
+Integrasi dilakukan menggunakan Laravel HTTP Client melalui `Http` facade.
+
+Informasi yang diambil meliputi:
+- ISBN.
+- Judul buku.
+- Jumlah halaman.
+- Tanggal terbit.
+- Penerbit.
+
+Jika data buku tidak ditemukan, API SIPUS-Del memberikan respons HTTP 404.
+
+## 7. Implementasi SOAP Web Service
+
+SIPUS-Del menyediakan dua endpoint SOAP:
+
+- `GET /soap/sipus.wsdl` untuk memperoleh deskripsi layanan WSDL.
+- `POST /soap/sipus` untuk menjalankan operasi `CheckClearanceStatus`.
+
+Operasi `CheckClearanceStatus` menerima NIM peminjam melalui SOAP Envelope. Sistem menghitung transaksi pada tabel `peminjamans` yang memiliki status `dipinjam`, kemudian mengembalikan jumlah peminjaman aktif dalam respons XML.
+
+## 8. Format Error API Berdasarkan RFC 7807
+
+REST API SIPUS-Del menerapkan format Problem Details berdasarkan RFC 7807 untuk memberikan respons kesalahan secara terstruktur.
+
+Format respons terdiri dari:
+- `type`: referensi jenis masalah.
+- `title`: judul kesalahan.
+- `status`: kode status HTTP.
+- `detail`: penjelasan kesalahan.
+
+Beberapa kondisi yang telah diuji:
+- HTTP 401 Unauthorized ketika pengguna belum terautentikasi.
+- HTTP 404 Not Found ketika data buku tidak ditemukan.
+- HTTP 422 Unprocessable Content ketika data tidak valid.
+
+## 9. Dokumentasi OpenAPI
+
+Dokumentasi REST API disimpan dalam file:
+
+`docs/openapi-sipus-v1.yaml`
+
+Dokumentasi tersebut memuat informasi endpoint, metode HTTP, parameter, autentikasi Bearer Token, request, dan respons API SIPUS-Del.
