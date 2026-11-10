@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Peminjaman;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class SoapController extends Controller
 {
@@ -71,35 +70,48 @@ class SoapController extends Controller
      */
     public function handle(Request $request)
     {
+        libxml_use_internal_errors(true);
+
         $xml = simplexml_load_string($request->getContent());
 
         if ($xml === false) {
-            return response('Invalid SOAP XML', 400)
-                ->header('Content-Type', 'text/plain');
+            libxml_clear_errors();
+
+            return $this->soapFault(
+                'Invalid SOAP XML',
+                400
+            );
         }
 
         $namespaces = $xml->getNamespaces(true);
-        $soapNamespace = $namespaces['soap'] ?? 'http://schemas.xmlsoap.org/soap/envelope/';
+        $soapNamespace = $namespaces['soap']
+            ?? 'http://schemas.xmlsoap.org/soap/envelope/';
 
         $body = $xml->children($soapNamespace)->Body ?? null;
 
         if (!$body) {
-            return response('Invalid SOAP Envelope', 400)
-                ->header('Content-Type', 'text/plain');
+            return $this->soapFault(
+                'Invalid SOAP Envelope',
+                400
+            );
         }
 
         $operation = $body->children()->CheckClearanceStatus ?? null;
 
         if (!$operation) {
-            return response('Invalid SOAP operation', 400)
-                ->header('Content-Type', 'text/plain');
+            return $this->soapFault(
+                'Invalid SOAP operation',
+                400
+            );
         }
 
         $nim = trim((string) $operation->nim_peminjam);
 
         if ($nim === '') {
-            return response('nim_peminjam is required', 422)
-                ->header('Content-Type', 'text/plain');
+            return $this->soapFault(
+                'nim_peminjam is required',
+                400
+            );
         }
 
         $activeLoans = Peminjaman::where('nim_peminjam', $nim)
@@ -116,6 +128,25 @@ class SoapController extends Controller
 </soap:Envelope>';
 
         return response($responseXml, 200)
+            ->header('Content-Type', 'text/xml; charset=UTF-8');
+    }
+
+    /**
+     * Menghasilkan respons SOAP Fault ketika terjadi kesalahan.
+     */
+    private function soapFault($faultString, $statusCode = 400)
+    {
+        $responseXml = '<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+    <soap:Body>
+        <soap:Fault>
+            <faultcode>soap:Client</faultcode>
+            <faultstring>' . htmlspecialchars($faultString, ENT_XML1, 'UTF-8') . '</faultstring>
+        </soap:Fault>
+    </soap:Body>
+</soap:Envelope>';
+
+        return response($responseXml, $statusCode)
             ->header('Content-Type', 'text/xml; charset=UTF-8');
     }
 }
